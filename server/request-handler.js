@@ -11,12 +11,25 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
+var storage = {
+  results: []
+};
+
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'content-type, accept',
   'access-control-max-age': 10 // Seconds.
 };
+
+var stringify = function(data) {
+  return JSON.stringify(data);
+};
+
+// var outputMessage = function (message) {
+ 
+// };
+
 
 var requestHandler = function(request, response) {
   // Request and Response come from node's http module.
@@ -36,7 +49,7 @@ var requestHandler = function(request, response) {
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
   // The outgoing status.
-  var statusCode = 200;
+  // var statusCode = 200;
 
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
@@ -49,15 +62,38 @@ var requestHandler = function(request, response) {
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  // if (response.url === '/classes/messages' && response.method === 'GET') {
+  // if (request.url === '/classes/messages' && request.method === 'GET') {
   //   response.writeHead(statusCode, headers);
   // }
-  // if (response.url === 'classes/messages' && response.method === 'POST') {
+  // if (request.url === 'classes/messages' && request.method === 'POST') {
   //   response.writeHead(201, headers);
   // }
 
+  if (request.method === 'GET') {
+    response.writeHead(200, defaultCorsHeaders);
+    storage.results.push(request.data);
+    response.end(stringify(storage));
+  } 
+
+  if (request.method === 'POST') {
+    response.writeHead(201, defaultCorsHeaders);
+  }
+
+  if (request.method === 'OPTIONS') {
+    response.writeHead(200, defaultCorsHeaders);
+  }
+
+  console.log(defaultCorsHeaders['access-control-allow-methods'].indexOf('zdfv'));
+
+  if (defaultCorsHeaders['access-control-allow-methods'].indexOf(request.method) === -1) {
+    response.writeHead(404, defaultCorsHeaders);
+  }
+  
   console.log(request.method);
-  console.log(request.url);
+  // outputMessage(request);
+
+  // console.log(request.method);
+  // console.log(request.url);
   // response.writeHead(statusCode, headers);
 
   // Make sure to always call response.end() - Node may not send
@@ -71,6 +107,15 @@ var requestHandler = function(request, response) {
 
    
 };
+
+
+
+
+
+
+
+
+
 
 module.exports = requestHandler;
 // These headers will allow Cross-Origin Resource Sharing (CORS).
