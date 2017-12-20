@@ -23,6 +23,7 @@ var defaultCorsHeaders = {
 
 var sendResponse = function(response, data, statusCode) {
   statusCode = statusCode || 200;
+  console.log(statusCode);
   response.writeHead(statusCode, defaultCorsHeaders);
   response.end(JSON.stringify(data));
 };
@@ -83,19 +84,18 @@ var requestHandler = function(request, response) {
   if (request.method === 'GET' && request.url === '/classes/messages') {
     sendResponse(response, {results: messages});
     // storage.results.push(request.data);
-    response.end(JSON.stringify({results: messages}));
   } else if (request.method === 'POST' && request.url === '/classes/messages') {
-
+    console.log('in post');
     collectData(request, function(message) {
-      messages.push(message);
       message.objectId = objectIdCounter++;
+      messages.push(message);
       sendResponse(response, {objectId: message.objectId}, 201);
     });
+
   } else if (request.method === 'OPTIONS') {
     sendResponse(response, defaultCorsHeaders);
   } else {
-    response.writeHead(404, defaultCorsHeaders);
-    response.end(JSON.stringify(null));
+    sendResponse(response, '', 404);
   }
   
   console.log(request.method);
