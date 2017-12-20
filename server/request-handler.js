@@ -11,9 +11,8 @@ this file and include it in basic-server.js so that it actually works.
 *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html.
 
 **************************************************************/
-var storage = {
-  results: []
-};
+var messages = [];
+var objectIdCounter = 1;
 
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
@@ -22,8 +21,21 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
-var stringify = function(data) {
-  return JSON.stringify(data);
+var sendResponse = function(response, data, statusCode) {
+  statusCode = statusCode || 200;
+  response.writeHead(statusCode, defaultCorsHeaders);
+  response.end(JSON.stringify(data));
+};
+
+var collectData = function(request, cb) {
+  var data = '';
+  request.on('data', function(chunk) {
+    data += chunk;
+  });
+
+  request.on('end', function() {
+    cb(JSON.parse(data));
+  });
 };
 
 // var outputMessage = function (message) {
@@ -58,7 +70,6 @@ var requestHandler = function(request, response) {
   //
   // You will need to change this if you are sending something
   // other than plain text, like JSON or HTML.
-  headers['Content-Type'] = 'text/plain';
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
@@ -69,24 +80,22 @@ var requestHandler = function(request, response) {
   //   response.writeHead(201, headers);
   // }
 
-  if (request.method === 'GET') {
-    response.writeHead(200, defaultCorsHeaders);
-    storage.results.push(request.data);
-    response.end(stringify(storage));
-  } 
+  if (request.method === 'GET' && request.url === '/classes/messages') {
+    sendResponse(response, {results: messages});
+    // storage.results.push(request.data);
+    response.end(JSON.stringify({results: messages}));
+  } else if (request.method === 'POST' && request.url === '/classes/messages') {
 
-  if (request.method === 'POST') {
-    response.writeHead(201, defaultCorsHeaders);
-  }
-
-  if (request.method === 'OPTIONS') {
-    response.writeHead(200, defaultCorsHeaders);
-  }
-
-  console.log(defaultCorsHeaders['access-control-allow-methods'].indexOf('zdfv'));
-
-  if (defaultCorsHeaders['access-control-allow-methods'].indexOf(request.method) === -1) {
+    collectData(request, function(message) {
+      messages.push(message);
+      message.objectId = objectIdCounter++;
+      sendResponse(response, {objectId: message.objectId}, 201);
+    });
+  } else if (request.method === 'OPTIONS') {
+    sendResponse(response, defaultCorsHeaders);
+  } else {
     response.writeHead(404, defaultCorsHeaders);
+    response.end(JSON.stringify(null));
   }
   
   console.log(request.method);
